@@ -2,6 +2,8 @@ import { forwardRef, useRef, useImperativeHandle } from "react";
 import { SubtitleItem } from "../core/subtitle";
 import { translate } from "../core/translate";
 import TimecodeInput from "./TimecodeInput";
+import { CornerDownLeftIcon, CornerDownRightIcon, LanguagesIcon, TrashIcon, XIcon } from "lucide-react";
+import { IconButton } from "./Elements";
 
 const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, onRequestFocus, onSplit, index }: {
     index: number,
@@ -49,37 +51,25 @@ const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, on
                 if (selectionStart === selectionEnd && selectionStart > 0 && selectionStart < item.text.length) {
                     onSplit(index, selectionStart);
                     e.preventDefault();
+                } else if (selectionStart === item.text.length) {
+                    onSplit(index, selectionStart);
+                    e.preventDefault();
                 }
             }
         }
     }
 
     return <>
-        <div className="p-4 border rounded my-2 shadow">
-            <div className="flex items-center">
-                <h3 className="mr-4">{index}</h3>
-                <TimecodeInput value={item.start} onNewValue={(value) => {
-                    onItemChange({ ...item, start: value })
-                }} ref={timecodeInputStartRef} />
-                <TimecodeInput value={item.end} onNewValue={(value) => {
-                    onItemChange({ ...item, end: value })
-                }} ref={timecodeInputEndRef} />
-            </div>
-            <div className="mt-2">
-                <textarea className="w-full p-2 border rounded" rows={1} value={item.text} onChange={(e) => {
-                    onItemChange({ ...item, text: e.target.value })
-                }} onKeyDown={handleKeyDown} ref={textareaRef} />
-                <div className="flex space-x-2 mt-2">
-                    <button className="bg-gray-300 px-2 py-1 rounded" onClick={() => onMerge(index - 1, index)}>Merge with previous</button>
-                    <button className="bg-gray-300 px-2 py-1 rounded" onClick={() => onMerge(index, index + 1)}>Merge with below</button>
-                    <button className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => onRemove(index)}>Remove</button>
-                    <button className="bg-blue-500 text-white px-2 py-1 rounded" onClick={() => onRequestFocus(-1)}>Focus</button>
-                    <button className="bg-green-500 text-white px-2 py-1 rounded" onClick={() => {
-                        translate(item.text, 'japanese', 'chinese').then((translatedText) => {
-                            onItemChange({ ...item, text: translatedText ?? '' });
-                        });
-                    }}>Translate</button>
-                </div>
+        <div className="border-b flex items-stretch">
+            <h3 className="flex items-center justify-right flex-shrink-0 w-4ch pr-1ch font-bold text-sm text-neutral-600 select-none bg-neutral-300">{index}</h3>
+            <TimecodeInput value={item.start} onNewValue={(value) => {
+                onItemChange({ ...item, start: value })
+            }} ref={timecodeInputStartRef} name="timecode-input-start" />
+            <textarea className="border-l ml-1 pl-1 w-full text-sm resize-none focus:ring-1 outline-none" rows={1} value={item.text} onChange={(e) => {
+                onItemChange({ ...item, text: e.target.value })
+            }} onKeyDown={handleKeyDown} ref={textareaRef} name="textarea-text" />
+            <div className="flex">
+             <IconButton name="Remove" onClick={() => onRemove(index)}><XIcon className="w-4 h-4 stroke-gray-600" /></IconButton>
             </div>
         </div>
     </>

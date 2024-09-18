@@ -1,5 +1,15 @@
 import OpenAI from "openai";
 
+export const Languages = {
+    'en': 'English',
+    'zh': 'Chinese',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'fr': 'French',
+    'de': 'German',
+    'es': 'Spanish',
+}
+
 const llmProvider = new OpenAI({
     baseURL: 'https://xiaoai.plus/v1',
     apiKey: 'sk-rJqtLCadgR2BTthcC7Ed8d61B7A54eA58732E30241157424',

@@ -7,11 +7,12 @@ class Timecode {
 
     constructor(seconds: number)
     constructor(timecode: string)
-    constructor(timecode: string | number) {
+    constructor(arr: [number, number, number, number])
+    constructor(timecode: string | number | [number, number, number, number]) {
         if (typeof timecode === "string") {
             const [hours, minutes, seconds, milliseconds] = timecode.split(/[:,]/).map((v) => {
                 if (Number.isNaN(Number(v))) {
-                    throw new Error('Invalid timecode');
+                    throw new Error(`Invalid timecode: ${timecode}`);
                 }
                 return Number(v);
             });
@@ -24,14 +25,20 @@ class Timecode {
             this.minutes = Math.floor((timecode % 3600) / 60);
             this.seconds = Math.floor(timecode % 60);
             this.milliseconds = Math.floor((timecode % 1) * 1000);
+        } else if (Array.isArray(timecode)) {
+            this.hours = timecode[0];
+            this.minutes = timecode[1];
+            this.seconds = timecode[2];
+            this.milliseconds = timecode[3];
         } else {
-            throw new Error('Invalid timecode');
+            throw new Error(`Invalid timecode: ${timecode}`);
         }
+
         if (this.hours < 0 || this.minutes < 0 || this.seconds < 0 || this.milliseconds < 0) {
-            throw new Error('Invalid timecode');
+            throw new Error(`Invalid timecode: ${timecode}`);
         }
         if (this.milliseconds >= 1000 || this.seconds >= 60 || this.minutes >= 60) {
-            throw new Error('Invalid timecode');
+            throw new Error(`Invalid timecode: ${timecode}`);
         }
     }
 
@@ -54,6 +61,22 @@ class Timecode {
         const seconds = this.seconds.toString().padStart(2, '0');
         const milliseconds = this.milliseconds.toString().padStart(3, '0');
         return `${hours}:${minutes}:${seconds},${milliseconds}`;
+    }
+
+    hoursString() {
+        return this.hours.toString().padStart(2, '0');
+    }
+
+    minutesString() {
+        return this.minutes.toString().padStart(2, '0');
+    }
+
+    secondsString() {
+        return this.seconds.toString().padStart(2, '0');
+    }
+
+    millisecondsString() {
+        return this.milliseconds.toString().padStart(3, '0');
     }
 };
 

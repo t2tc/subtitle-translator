@@ -12,5 +12,9 @@ export default defineConfig({
         plugins: [reactCompiler, {}],
       },
     }
-  ), uno()],
+  ), uno(
+    {
+      configFile: 'unocss.config.ts',
+    }
+  )],
 })
