@@ -46,6 +46,7 @@ const TimecodeInput = forwardRef(({ value, onNewValue, disabled = false, name = 
         console.log('handleHoursMove', movementY);
         const hours = parseInt(timecode.split(':')[0] || '0');
         const newHours = hours + movementY;
+        if (newHours < 0) { return; }
         const newTimecode = new Timecode([newHours, value.minutes, value.seconds, value.milliseconds]);
         setTimecode(newTimecode.toString());
     }
