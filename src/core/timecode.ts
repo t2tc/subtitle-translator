@@ -63,19 +63,23 @@ class Timecode {
         return `${hours}:${minutes}:${seconds},${milliseconds}`;
     }
 
-    hoursString() {
+    get totalMilliseconds() {
+        return this.hours * 3600 * 1000 + this.minutes * 60 * 1000 + this.seconds * 1000 + this.milliseconds;
+    }
+
+    get hoursString() {
         return this.hours.toString().padStart(2, '0');
     }
 
-    minutesString() {
+    get minutesString() {
         return this.minutes.toString().padStart(2, '0');
     }
 
-    secondsString() {
+    get secondsString() {
         return this.seconds.toString().padStart(2, '0');
     }
 
-    millisecondsString() {
+    get millisecondsString() {
         return this.milliseconds.toString().padStart(3, '0');
     }
 };
