@@ -1,11 +1,10 @@
 import { forwardRef, useRef, useImperativeHandle } from "react";
 import { SubtitleItem } from "../core/subtitle";
-import { translate } from "../core/translate";
 import TimecodeInput from "./TimecodeInput";
-import { CornerDownLeftIcon, CornerDownRightIcon, LanguagesIcon, TrashIcon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { IconButton } from "./Elements";
 
-const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, onRequestFocus, onSplit, index }: {
+const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, onRequestFocus, onSplit, index, selected }: {
     index: number,
     item: SubtitleItem,
     onItemChange: (item: SubtitleItem) => void,
@@ -13,10 +12,10 @@ const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, on
     onRemove: (index: number) => void,
     onRequestFocus: (index: 1 | -1) => void,
     onSplit: (index: number, position: number) => void,
+    selected: boolean,
 }, ref: React.Ref<any>) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const timecodeInputStartRef = useRef<HTMLInputElement>(null);
-    const timecodeInputEndRef = useRef<HTMLInputElement>(null);
 
     useImperativeHandle(ref, () => ({
         focusTextarea: (offset: number) => {
@@ -26,10 +25,6 @@ const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, on
         focusTimecodeInputStart: () => {
             timecodeInputStartRef.current?.focus();
             timecodeInputStartRef.current?.select();
-        },
-        focusTimecodeInputEnd: () => {
-            timecodeInputEndRef.current?.focus();
-            timecodeInputEndRef.current?.select();
         }
     }));
 
@@ -59,19 +54,21 @@ const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, on
         }
     }
 
+    const className = `border-b flex items-stretch ${selected ? 'bg-amber-100 shadow-glow shadow-amber-500' : ''}`;
+
     return <>
-        <div className="border-b flex items-stretch">
+        <div className={className}>
             <h3 className="flex items-center justify-right flex-shrink-0 w-4ch pr-1ch font-bold text-sm text-neutral-600 select-none bg-neutral-300">{index}</h3>
             <TimecodeInput value={item.start} onNewValue={(value) => {
                 onItemChange({ ...item, start: value })
             }} ref={timecodeInputStartRef} name="timecode-input-start" />
-            <textarea className="border-l ml-1 pl-1 w-full text-sm resize-none focus:ring-1 outline-none" rows={1} value={item.text} onChange={(e) => {
+            <textarea className="border-l ml-1 pl-1 w-full text-sm resize-none focus:ring-1 outline-none bg-transparent" rows={1} value={item.text} onChange={(e) => {
                 onItemChange({ ...item, text: e.target.value })
             }} onKeyDown={handleKeyDown} ref={textareaRef} name="textarea-text" />
             <div className="flex">
-             <IconButton name="Remove" onClick={() => onRemove(index)}><XIcon className="w-4 h-4 stroke-gray-600" /></IconButton>
-            </div>
+                <IconButton name="Remove" onClick={() => onRemove(index) }><XIcon className="w-4 h-4 stroke-gray-600" /></IconButton>
         </div>
+    </div >
     </>
 });
 
