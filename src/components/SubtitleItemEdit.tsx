@@ -1,29 +1,47 @@
-import { forwardRef, useRef, useImperativeHandle } from "react";
+import { forwardRef, useRef, useImperativeHandle, useEffect } from "react";
 import { SubtitleItem } from "../core/subtitle";
-import TimecodeInput from "./TimecodeInput";
+import { TimecodeInput, type TimecodeInputRef } from "./TimecodeInput";
 import { XIcon } from "lucide-react";
 import { IconButton } from "./Elements";
+import { MultiSelectManager } from "../core/multiSelectable";
 
-const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, onRequestFocus, onSplit, index, selected }: {
+type SubtitleItemEditRef = {
+    focusTextarea: (offset: number) => void,
+    focusTimecodeInput: () => void,
+}
+
+const SubtitleItemEdit = forwardRef(({
+    index,
+    item,
+    onItemChange,
+    onRequestMerge,
+    onRequestRemove,
+    onRequestFocusOtherItems,
+    onRequestSplit,
+    onRequestSelect,
+    selected
+}: {
     index: number,
     item: SubtitleItem,
-    onItemChange: (item: SubtitleItem) => void,
-    onMerge: (indexStart: number, indexEnd: number) => void,
-    onRemove: (index: number) => void,
-    onRequestFocus: (index: 1 | -1) => void,
-    onSplit: (index: number, position: number) => void,
     selected: boolean,
-}, ref: React.Ref<any>) => {
+    onItemChange: (item: SubtitleItem) => void,
+    onRequestMerge: (indexStart: number, indexEnd: number) => void,
+    onRequestRemove: (index: number) => void,
+    onRequestFocusOtherItems: (index: 1 | -1) => void,
+    onRequestSplit: (index: number, position: number) => void,
+    onRequestSelect: (multi: boolean) => void,
+}, ref: React.Ref<SubtitleItemEditRef>) => {
+
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const timecodeInputStartRef = useRef<HTMLInputElement>(null);
+    const timecodeInputStartRef = useRef<TimecodeInputRef>(null);
+    const rootRef = useRef<HTMLElement>(null);
 
     useImperativeHandle(ref, () => ({
         focusTextarea: (offset: number) => {
             textareaRef.current?.focus();
             textareaRef.current?.setSelectionRange(offset, offset);
         },
-        focusTimecodeInputStart: () => {
-            timecodeInputStartRef.current?.focus();
+        focusTimecodeInput: () => {
             timecodeInputStartRef.current?.select();
         }
     }));
@@ -35,7 +53,7 @@ const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, on
                 const { selectionStart, selectionEnd } = textarea;
                 if (selectionStart === selectionEnd && selectionStart === 0) {
                     e.preventDefault();
-                    onMerge(index - 1, index);
+                    onRequestMerge(index - 1, index);
                 }
             }
         }
@@ -44,20 +62,32 @@ const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, on
             if (textarea) {
                 const { selectionStart, selectionEnd } = textarea;
                 if (selectionStart === selectionEnd && selectionStart > 0 && selectionStart < item.text.length) {
-                    onSplit(index, selectionStart);
+                    onRequestSplit(index, selectionStart);
+                    onRequestFocusOtherItems(1);
                     e.preventDefault();
                 } else if (selectionStart === item.text.length) {
-                    onSplit(index, selectionStart);
+                    onRequestSplit(index, selectionStart);
                     e.preventDefault();
                 }
             }
         }
     }
 
+    useEffect(() => {
+        const handle = MultiSelectManager.addElement(rootRef.current as HTMLElement, () => {
+            console.log('MultiSelectManager.addElement');
+        });
+        return () => {
+            handle();
+        }
+    }, []);
+
     const className = `border-b flex items-stretch ${selected ? 'bg-amber-100 shadow-glow shadow-amber-500' : ''}`;
 
-    return <>
-        <div className={className}>
+    return (
+        <subtitle-edit class={className} data-index={index} data-multi-selectable onPointerDown={(e) => {
+            onRequestSelect(e.shiftKey);
+        }} ref={rootRef}>
             <h3 className="flex items-center justify-right flex-shrink-0 w-4ch pr-1ch font-bold text-sm text-neutral-600 select-none bg-neutral-300">{index}</h3>
             <TimecodeInput value={item.start} onNewValue={(value) => {
                 onItemChange({ ...item, start: value })
@@ -66,10 +96,10 @@ const SubtitleItemEdit = forwardRef(({ item, onItemChange, onMerge, onRemove, on
                 onItemChange({ ...item, text: e.target.value })
             }} onKeyDown={handleKeyDown} ref={textareaRef} name="textarea-text" />
             <div className="flex">
-                <IconButton name="Remove" onClick={() => onRemove(index) }><XIcon className="w-4 h-4 stroke-gray-600" /></IconButton>
-        </div>
-    </div >
-    </>
+                <IconButton name="Remove" onClick={() => onRequestRemove(index)}><XIcon className="w-4 h-4 stroke-gray-600" /></IconButton>
+            </div>
+        </subtitle-edit>
+    );
 });
 
-export default SubtitleItemEdit;
+export { SubtitleItemEdit, type SubtitleItemEditRef };

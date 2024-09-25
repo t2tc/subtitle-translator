@@ -1,19 +1,15 @@
-import { useRef, useSyncExternalStore, useState, memo } from 'react';
+import { useRef, useSyncExternalStore, useState, memo, useEffect } from 'react';
 import { parseSubRipFormat, serializeSubRipFormat } from './core/srt';
 import { Timecode } from './core/timecode';
-import { SubtitleStore } from './subtitleStore';
+import { SubtitleStore } from './core/subtitleStore';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/Radix';
-import SubtitleItemEdit from './components/SubtitleItemEdit';
-import { PrimaryButton } from './components/Elements';
+import { SubtitleItemEdit, SubtitleItemEditRef } from './components/SubtitleItemEdit';
+import { IconButton, LanguageSelector, PrimaryButton } from './components/Elements';
 import { Languages } from './core/translate';
+import { PlusIcon } from 'lucide-react';
+import { ReactiveUIStates } from './core/uiStates';
+import MouseSelectionProvider from './components/MouseSelectionProvider';
 
-function LanguageSelector({ value, onChange }: { value: string, onChange: (value: string) => void }) {
-    return <select className="border p-2 rounded" value={value} onChange={(e) => {
-        onChange(e.target.value);
-    }}>
-        {Object.entries(Languages).map(([key, value]) => <option key={key} value={key}>{value}</option>)}
-    </select>
-}
 
 function DictionaryEditorItem({ itemKey, itemValue, onChange, onRemove }: { itemKey: string, itemValue: string, onChange: (key: string, value: string) => void, onRemove: () => void }) {
     return (
@@ -123,9 +119,9 @@ const BasicInfo = memo(() => {
             }}>Add Subtitle</PrimaryButton>
             <div className="flex items-center space-x-2">
                 <span>From: </span>
-                <LanguageSelector value={from} onChange={setFrom} />
+                <LanguageSelector value={from} selections={Languages} onChange={setFrom} />
                 <span>To: </span>
-                <LanguageSelector value={to} onChange={setTo} />
+                <LanguageSelector value={to} selections={Languages} onChange={setTo} />
             </div>
         </>
     )
@@ -135,8 +131,9 @@ const BasicInfo = memo(() => {
 const TranslateTab = memo(() => {
     const subtitleStore = SubtitleStore;
     const subtitleItems = useSyncExternalStore(subtitleStore.subscribe, subtitleStore.getSnapshot);
+    const selectedIndex = useSyncExternalStore(ReactiveUIStates.subtitle.currentSelected.subscribe, ReactiveUIStates.subtitle.currentSelected.get);
 
-    const refs = useRef<Map<number, any>>(new Map());
+    const refs = useRef<Map<number, SubtitleItemEditRef>>(new Map());
 
     function getMap() {
         if (!refs.current) {
@@ -149,26 +146,26 @@ const TranslateTab = memo(() => {
         if (index < 0 || index >= subtitleItems.length) {
             return;
         }
-        refs.current.get(index)?.focusTextarea();
+        refs.current.get(index)?.focusTextarea(0);
     }
 
     function focusOnTimecodeInputStart(index: number) {
         if (index < 0 || index >= subtitleItems.length) {
             return;
         }
-        refs.current.get(index)?.focusTimecodeInputStart();
+        refs.current.get(index)?.focusTimecodeInput();
     }
 
     return (
         <>
             {subtitleItems && subtitleItems.map((item, index) => <SubtitleItemEdit key={index} item={item} onItemChange={(item) => {
                 subtitleStore.update(item, index);
-            }} onMerge={(indexStart, indexEnd) => {
+            }} onRequestMerge={(indexStart, indexEnd) => {
                 subtitleStore.merge(indexStart, indexEnd);
                 focusOnItem(indexStart);
-            }} onRemove={(index) => {
+            }} onRequestRemove={(index) => {
                 subtitleStore.remove(index);
-            }} index={index} onRequestFocus={(offset) => {
+            }} index={index} onRequestFocusOtherItems={(offset) => {
                 focusOnItem(index + offset);
             }} ref={(node) => {
                 const map = getMap();
@@ -177,10 +174,27 @@ const TranslateTab = memo(() => {
                 } else {
                     map.delete(index);
                 }
-            }} onSplit={(index, position) => {
+            }} onRequestSplit={(index, position) => {
                 subtitleStore.split(index, position);
                 focusOnTimecodeInputStart(index);
+            }} selected={selectedIndex?.includes(index) ?? false} 
+            onRequestSelect={(multi) => {
+                if (multi) {
+                    const currentSelected = ReactiveUIStates.subtitle.currentSelected.get() ?? [];
+                    ReactiveUIStates.subtitle.currentSelected.set([...currentSelected, index]);
+                } else {
+                    ReactiveUIStates.subtitle.currentSelected.set([index]);
+                }
             }} />)}
+            <div className="flex items-center justify-center pt-1">
+                <IconButton className="w-full" name="Add Subtitle" onClick={() => {
+                    subtitleStore.push({
+                    start: new Timecode('00:00:00,000'),
+                    end: new Timecode('00:00:00,000'),
+                    text: ''
+                });
+            }}><PlusIcon className="w-4 h-4 stroke-neutral-600 hover:stroke-neutral-800" /></IconButton>
+            </div>
         </>
     );
 });
@@ -195,7 +209,7 @@ function SettingsTab() {
 
 function App() {
     const [dictionary, setDictionary] = useState<{ from: string, to: string }[]>([]);
-
+    
     return (
       <>
         <BasicInfo />
@@ -222,9 +236,16 @@ function App() {
                 <SettingsTab />
             </TabsContent>
         </Tabs>
+
+        <MouseSelectionProvider onSelectionChange={(ids) => {
+            const indexes = ids.map(id => document.querySelector(`[data-multi-selectable="${id}"]`) as HTMLElement).map(element => parseInt(element.dataset.index ?? '-1')).filter(index => index !== -1);
+            ReactiveUIStates.subtitle.currentSelected.set(indexes);
+        }} onSelectionDetermined={() => {}} onShallNotSelect={() => {
+            return false;
+        }} />
+
         </>
     )
 }
-
 
 export default App
