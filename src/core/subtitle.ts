@@ -7,4 +7,3 @@ type SubtitleItem = {
 }
 
 export { type SubtitleItem };
-
