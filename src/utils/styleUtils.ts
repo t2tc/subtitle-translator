@@ -2,3 +2,5 @@
 function generateDarkTheme() {
 
 }
+
+export { generateDarkTheme };

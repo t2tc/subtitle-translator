@@ -12,4 +12,9 @@ export default defineConfig({
       ],
     },
   },
+  theme: {
+    boxShadow: {
+      'glow': '0 0 2px 0px',
+    }
+  }
 })
