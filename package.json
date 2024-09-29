@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-menubar": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.0",
     "babel-plugin-react-compiler": "^0.0.0-experimental-de2cfda-20240912",
     "lucide-react": "^0.441.0",
