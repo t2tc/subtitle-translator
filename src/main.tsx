@@ -6,6 +6,7 @@ import '@unocss/reset/tailwind.css';
 import 'virtual:uno.css';
 import './index.css';
 import ChromeOnly from './components/ChromeOnly.tsx';
+import { registerGlobalShortKeyHandler } from './utils/globalShortKeyHandler.ts';
 
 function init() {
     if (!/Chrome|Chromium/.test(navigator.userAgent)) {
@@ -21,6 +22,7 @@ function init() {
             <App />
         </StrictMode>,
     );
+    registerGlobalShortKeyHandler();
 }
 
 init();
